@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HabitHero ⚔️ Gamified RPG Habit Tracker</title>
+
+  <!-- Google Fonts: Outfit (Headings) & Inter (Body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- App Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<!-- Ambient Animated Orbs Background -->
+  <div class="ambient-bg">
+    <div class="ambient-orb ambient-orb-1"></div>
+    <div class="ambient-orb ambient-orb-2"></div>
+    <div class="ambient-orb ambient-orb-3"></div>
+  </div>
+
+  <!-- Fullscreen Confetti Canvas -->
+  <canvas id="confettiCanvas"></canvas>
+
+  <!-- Global Floating Tooltip -->
+  <div id="appTooltip"></div>
+
+  <!-- Main App Wrapper -->
+  <div class="app-container">
+    
+    <!-- Top Header -->
+    <header class="app-header">
+      <div class="header-top">
+        <a href="#" class="brand-wrapper" onclick="window.app.switchView('dashboard'); return false;">
+          <div class="brand-logo-icon">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <div class="brand-text">
+            <h1>HabitHero <span style="font-size:18px">⚔️</span></h1>
+            <p>Level Up Your Life Everyday</p>
+          </div>
+        </a>
+
+        <!-- Header Actions -->
+        <div class="header-actions">
+          <!-- Combo Multiplier Pill -->
+          <div class="combo-pill" id="comboPill" title="Complete habits back-to-back to build combo!">
+            <i class="fa-solid fa-bolt"></i>
+            <span id="comboMultiplierText">1.0x</span> Combo
+            <div class="combo-timer-bar" id="comboTimerBar"></div>
+          </div>
+
+          <!-- Sound FX Toggle -->
+          <button class="glass-btn glass-btn-icon" id="soundToggleBtn" title="Toggle Sound FX">
+            <i class="fa-solid fa-volume-high" id="soundIcon"></i>
+          </button>
+
+          <!-- Theme Toggle -->
+          <button class="glass-btn glass-btn-icon" id="themeToggleBtn" title="Toggle Dark/Light Mode">
+            <i class="fa-solid fa-moon" id="themeIcon"></i>
+          </button>
+
+          <!-- Quick Add Habit Button -->
+          <button class="glass-btn glass-btn-primary" id="headerAddBtn" onclick="window.app.openCreateHabitModal()">
+            <i class="fa-solid fa-plus"></i>
+            <span>New Habit</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Rotating Motivational Quote Banner -->
+      <div class="quote-banner">
+        <div class="quote-content">
+          <i class="fa-solid fa-quote-left quote-icon"></i>
+          <span class="quote-text" id="quoteText">We are what we repeatedly do. Excellence, then, is not an act, but a habit.</span>
+          <span class="quote-author" id="quoteAuthor">— Aristotle</span>
+        </div>
+        <button class="quote-refresh-btn" id="refreshQuoteBtn" title="New Quote">
+          <i class="fa-solid fa-rotate-right"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="app-nav">
+      <button class="nav-tab active" data-view="dashboard">
+        <i class="fa-solid fa-gamepad"></i>
+        <span>Dashboard</span>
+      </button>
+      <button class="nav-tab" data-view="habits">
+        <i class="fa-solid fa-list-check"></i>
+        <span>Habits</span>
+      </button>
+      <button class="nav-tab" data-view="stats">
+        <i class="fa-solid fa-chart-line"></i>
+        <span>Analytics</span>
+      </button>
+      <button class="nav-tab" data-view="achievements">
+        <i class="fa-solid fa-dragon"></i>
+        <span>Boss & Trophies</span>
+      </button>
+      <button class="nav-tab" data-view="settings">
+        <i class="fa-solid fa-gear"></i>
+        <span>Settings</span>
+      </button>
+    </nav>
+
+    <!-- ====================================================================
+         VIEW 1: DASHBOARD
+         ==================================================================== -->
+    <main class="app-view active" id="view-dashboard">
+      
+      <!-- Hero Banner & XP Progress -->
+      <div class="glass-card hero-profile-banner">
+        <div class="hero-avatar-group">
+          <div class="hero-avatar">
+            <i class="fa-solid fa-hat-wizard"></i>
+            <div class="hero-prestige-star" id="heroPrestigeStar" style="display:none;" title="Prestige Rank">★</div>
+          </div>
+          <div class="hero-identity">
+            <h2>
+              <span id="heroPlayerName">Habit Warrior</span>
+              <span class="hero-title-badge" id="heroTitleBadge">Novice</span>
+            </h2>
+            <div class="hero-level-tag">
+              Level <strong id="heroLevelNum" style="color:var(--text-primary)">1</strong> Adventurer • <span id="heroPrestigeTierText">Tier 0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-xp-wrapper">
+          <div class="hero-xp-labels">
+            <span>XP: <span class="xp-current-val" id="xpCurrentNum">0</span> / <span class="xp-next-val" id="xpTargetNum">100</span></span>
+            <span id="xpPercentText" style="color:var(--accent-green)">0%</span>
+          </div>
+          <div class="xp-bar-track">
+            <div class="xp-bar-fill" id="xpBarFill"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Stats Metrics Grid -->
+      <div class="dashboard-metrics-grid">
+        <div class="glass-card stat-card">
+          <div class="stat-card-icon icon-pink">
+            <span class="streak-flame">🔥</span>
+          </div>
+          <div class="stat-card-info">
+            <p>Hero Streak</p>
+            <h3><span id="heroStreakNum">0</span> Days</h3>
+          </div>
+        </div>
+
+        <div class="glass-card stat-card">
+          <div class="stat-card-icon icon-green">
+            <i class="fa-solid fa-circle-check"></i>
+          </div>
+          <div class="stat-card-info">
+            <p>Today's Habits</p>
+            <h3><span id="todayDoneNum">0</span> / <span id="todayTotalNum">0</span></h3>
+          </div>
+        </div>
+
+        <div class="glass-card stat-card">
+          <div class="stat-card-icon icon-purple">
+            <i class="fa-solid fa-skull-crossbones"></i>
+          </div>
+          <div class="stat-card-info">
+            <p>Weekly Boss HP</p>
+            <h3><span id="dashBossHpPercent">100</span>%</h3>
+          </div>
+        </div>
+
+        <div class="glass-card stat-card">
+          <div class="stat-card-icon icon-gold">
+            <i class="fa-solid fa-trophy"></i>
+          </div>
+          <div class="stat-card-info">
+            <p>Total Completed</p>
+            <h3><span id="totalDoneAllTime">0</span></h3>
+          </div>
+        </div>
+      </div>
+
+      <!-- Middle Row: Virtual Pet Sanctuary & Daily Challenge -->
+      <div class="dash-middle-row">
+        
+        <!-- Virtual Pet Card -->
+        <div class="glass-card pet-card">
+          <div class="pet-header">
+            <h3><i class="fa-solid fa-dragon" style="color:var(--primary-light)"></i> Companion Aero</h3>
+            <span class="pet-stage-badge egg" id="petStageBadge">Mystic Egg</span>
+          </div>
+
+          <div class="pet-display-area">
+            <div class="pet-avatar-wrapper" id="petAvatarWrapper" title="Click to interact with Aero!">
+              <div class="pet-egg" id="petVisual">🥚</div>
+            </div>
+            <div class="pet-dialogue-bubble" id="petDialogueBubble">
+              "The egg hums with potential. Complete habits to help it hatch!"
+            </div>
+          </div>
+
+          <div class="pet-footer">
+            <div class="pet-happiness">
+              <i class="fa-solid fa-heart" style="color:var(--secondary)"></i>
+              <span>Bond: <strong id="petHappinessText">100%</strong></span>
+            </div>
+            <button class="glass-btn pet-interaction-btn" id="petActionBtn" onclick="window.app.interactPet()">
+              <i class="fa-solid fa-sparkles"></i> Pet Aero
+            </button>
+          </div>
+        </div>
+
+        <!-- Daily Challenge Card -->
+        <div class="glass-card challenge-card">
+          <div class="challenge-header">
+            <h3><i class="fa-solid fa-bullseye" style="color:var(--secondary)"></i> Daily Challenge</h3>
+            <div class="challenge-reward-badge" id="challengeRewardBadge">
+              <i class="fa-solid fa-star"></i> +100 XP
+            </div>
+          </div>
+
+          <div class="challenge-body">
+            <div class="challenge-title" id="challengeTitle">Morning Champion</div>
+            <div class="challenge-desc" id="challengeDesc">Complete at least 2 habits before 12:00 PM today.</div>
+            <div class="challenge-progress-bar-track">
+              <div class="challenge-progress-bar-fill" id="challengeProgressFill"></div>
+            </div>
+          </div>
+
+          <div class="challenge-footer">
+            <span>Progress: <strong id="challengeProgressText">0 / 2</strong></span>
+            <span id="challengeStatusBadge" style="font-weight:700; color:var(--accent-orange)">In Progress</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Today's Habits Section -->
+      <div class="today-habits-section">
+        <div class="today-habits-header">
+          <h3>
+            <i class="fa-solid fa-calendar-day" style="color:var(--accent-green)"></i>
+            <span>Today's Habits</span>
+            <span style="font-size:13px; font-weight:500; color:var(--text-secondary)" id="todayDateLabel"></span>
+          </h3>
+          <div class="filter-pills-row">
+            <button class="filter-pill active" data-filter="all" onclick="window.app.setTodayFilter('all')">All</button>
+            <button class="filter-pill" data-filter="todo" onclick="window.app.setTodayFilter('todo')">To Do</button>
+            <button class="filter-pill" data-filter="completed" onclick="window.app.setTodayFilter('completed')">Done</button>
+          </div>
+        </div>
+
+        <!-- Today Habits Grid -->
+        <div class="habits-grid" id="todayHabitsGrid">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+    </main>
+
+    <!-- ====================================================================
+         VIEW 2: HABITS MANAGEMENT
+         ==================================================================== -->
+    <main class="app-view" id="view-habits">
+      
+      <div class="habits-management-header">
+        <div>
+          <h2 style="font-family:var(--font-heading); font-size:24px; font-weight:800">Habits Collection</h2>
+          <p style="color:var(--text-secondary); font-size:13px">Design, track and master your daily rituals</p>
+        </div>
+        <button class="glass-btn glass-btn-primary" onclick="window.app.openCreateHabitModal()">
+          <i class="fa-solid fa-plus"></i>
+          <span>Create Habit</span>
+        </button>
+      </div>
+
+      <!-- Controls: Search & Sort -->
+      <div class="habits-controls-bar">
+        <div class="search-input-wrapper">
+          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <input type="text" class="glass-input" id="habitSearchInput" placeholder="Search habits..." oninput="window.app.handleHabitSearch(this.value)">
+        </div>
+
+        <select class="glass-select" id="habitSortSelect" onchange="window.app.handleHabitSort(this.value)">
+          <option value="created">Sort by: Default</option>
+          <option value="streak">Sort by: Highest Streak</option>
+          <option value="xp">Sort by: Highest XP</option>
+          <option value="difficulty">Sort by: Difficulty</option>
+          <option value="name">Sort by: Name (A-Z)</option>
+        </select>
+      </div>
+
+      <!-- Category Filter Pills -->
+      <div class="category-tags-scroll" id="categoryFilterScroll">
+        <button class="category-filter-btn active" data-cat="all" onclick="window.app.filterHabitsByCategory('all')">
+          <i class="fa-solid fa-border-all"></i> All Categories
+        </button>
+        <button class="category-filter-btn" data-cat="Health" onclick="window.app.filterHabitsByCategory('Health')">
+          💧 Health
+        </button>
+        <button class="category-filter-btn" data-cat="Fitness" onclick="window.app.filterHabitsByCategory('Fitness')">
+          🏃 Fitness
+        </button>
+        <button class="category-filter-btn" data-cat="Learning" onclick="window.app.filterHabitsByCategory('Learning')">
+          📚 Learning
+        </button>
+        <button class="category-filter-btn" data-cat="Mindfulness" onclick="window.app.filterHabitsByCategory('Mindfulness')">
+          🧘 Mindfulness
+        </button>
+        <button class="category-filter-btn" data-cat="Productivity" onclick="window.app.filterHabitsByCategory('Productivity')">
+          💻 Productivity
+        </button>
+        <button class="category-filter-btn" data-cat="Creative" onclick="window.app.filterHabitsByCategory('Creative')">
+          🎨 Creative
+        </button>
+        <button class="category-filter-btn" data-cat="Social" onclick="window.app.filterHabitsByCategory('Social')">
+          🤝 Social
+        </button>
+      </div>
+
+      <!-- All Habits Grid -->
+      <div class="habits-grid" id="allHabitsGrid">
+        <!-- Rendered dynamically -->
+      </div>
+
+    </main>
+
+    <!-- ====================================================================
+         VIEW 3: STATS & ANALYTICS
+         ==================================================================== -->
+    <main class="app-view" id="view-stats">
+      
+      <!-- Metrics Overview -->
+      <div class="stats-summary-grid">
+        <div class="glass-card stat-card">
+          <div class="stat-card-icon icon-green">
+            <i class="fa-solid fa-percent"></i>
+          </div>
+          <div class="stat-card-info">
+            <p>Completion Rate</p>
+            <h3 id="statCompletionRate">0%</h3>
+          </div>
+        </div>
+
+        <div class="glass-card stat-card">
+          <div class="stat-card-icon icon-purple">
+            <i class="fa-solid fa-check-double"></i>
+          </div>
+          <div class="stat-card-info">
+            <p>Total Check-ins</p>
+            <h3 id="statTotalCheckins">0</h3>
+          </div>
+        </div>
+
+        <div class="glass-card stat-card">
+          <div class="stat-card-icon icon-pink">
+            <span class="streak-flame">🔥</span>
+          </div>
+          <div class="stat-card-info">
+            <p>Best Hero Streak</p>
+            <h3><span id="statBestStreak">0</span> Days</h3>
+          </div>
+        </div>
+
+        <div class="glass-card stat-card">
+          <div class="stat-card-icon icon-gold">
+            <i class="fa-solid fa-star"></i>
+          </div>
+          <div class="stat-card-info">
+            <p>Perfect 100% Days</p>
+            <h3 id="statPerfectDays">0</h3>
+          </div>
+        </div>
+      </div>
+
+      <!-- GitHub Contribution Heatmap Card -->
+      <div class="glass-card heatmap-card">
+        <div class="card-title-row">
+          <h3><i class="fa-solid fa-calendar-days" style="color:var(--accent-green)"></i> 12-Week Activity Heatmap</h3>
+          <span style="font-size:12px; color:var(--text-secondary)">Past 84 Days</span>
+        </div>
+
+        <div class="heatmap-container">
+          <div class="heatmap-months-row" id="heatmapMonthsRow"></div>
+          <div class="heatmap-grid-wrapper">
+            <div class="heatmap-weekdays-col">
+              <span>Mon</span>
+              <span>Wed</span>
+              <span>Fri</span>
+              <span>Sun</span>
+            </div>
+            <div class="heatmap-days-matrix" id="heatmapDaysMatrix"></div>
+          </div>
+          
+          <div class="heatmap-legend">
+            <span>Less</span>
+            <div class="legend-swatch" style="background:rgba(255,255,255,0.04)"></div>
+            <div class="legend-swatch" style="background:rgba(67, 233, 123, 0.25)"></div>
+            <div class="legend-swatch" style="background:rgba(67, 233, 123, 0.5)"></div>
+            <div class="legend-swatch" style="background:rgba(67, 233, 123, 0.75)"></div>
+            <div class="legend-swatch" style="background:var(--accent-green); box-shadow:0 0 6px var(--accent-green-glow)"></div>
+            <span>More</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Dual Row: 7-Day Bar Chart & Category Donut Chart -->
+      <div class="charts-dual-row">
+        <!-- 7-Day Bar Chart -->
+        <div class="glass-card chart-card">
+          <div class="card-title-row">
+            <h3><i class="fa-solid fa-chart-column" style="color:var(--primary-light)"></i> Last 7 Days Performance</h3>
+            <span style="font-size:12px; color:var(--text-secondary)">Habits Completed</span>
+          </div>
+          <div class="chart-canvas-wrapper">
+            <canvas id="weeklyChartCanvas" class="stat-canvas"></canvas>
+          </div>
+        </div>
+
+        <!-- Category Donut Chart -->
+        <div class="glass-card chart-card">
+          <div class="card-title-row">
+            <h3><i class="fa-solid fa-chart-pie" style="color:var(--secondary)"></i> Category Distribution</h3>
+            <span style="font-size:12px; color:var(--text-secondary)">By Active Habits</span>
+          </div>
+          <div class="chart-canvas-wrapper">
+            <canvas id="categoryChartCanvas" class="stat-canvas"></canvas>
+          </div>
+          <div class="donut-legend" id="donutLegend"></div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- ====================================================================
+         VIEW 4: ACHIEVEMENTS & BOSS BATTLE
+         ==================================================================== -->
+    <main class="app-view" id="view-achievements">
+      
+      <!-- Weekly Boss Arena Card -->
+      <div class="glass-card boss-arena-card">
+        <div class="boss-top-meta">
+          <div class="boss-badge-tag">
+            <i class="fa-solid fa-skull"></i> Weekly Boss Encounter
+          </div>
+          <div class="boss-timer-tag">
+            <i class="fa-regular fa-clock"></i> Resets in: <strong id="bossTimerCountdown">4d 12h</strong>
+          </div>
+        </div>
+
+        <div class="boss-stage-layout">
+          <!-- Boss Visual Avatar -->
+          <div class="boss-monster-wrapper">
+            <div class="boss-monster-art" id="bossMonsterArt">🐉</div>
+            <div id="bossCombatFloaterContainer"></div>
+          </div>
+
+          <!-- Boss Information & HP -->
+          <div class="boss-stats-area">
+            <div class="boss-name-row">
+              <h2 id="bossNameTitle">Ignis the Sloth Dragon</h2>
+              <p class="boss-lore-desc" id="bossLoreDesc">
+                A primordial dragon born from procrastination and broken promises. Chip away its health by finishing your habits!
+              </p>
+            </div>
+
+            <div class="boss-hp-bar-container">
+              <div class="boss-hp-labels">
+                <span>BOSS HEALTH</span>
+                <span class="boss-hp-current"><strong id="bossCurrentHp">35</strong> / <span id="bossMaxHp">35</span> HP</span>
+              </div>
+              <div class="boss-hp-track">
+                <div class="boss-hp-fill" id="bossHpFill"></div>
+              </div>
+            </div>
+
+            <div class="boss-reward-callout">
+              <i class="fa-solid fa-gift"></i>
+              <div>
+                <strong>Victory Spoils:</strong> Defeat this monster before the week ends to claim <strong>+500 XP</strong> and the exclusive Boss Slayer trophy!
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trophy Hall / Badges Grid -->
+      <div class="trophy-room-header">
+        <div>
+          <h3><i class="fa-solid fa-trophy" style="color:var(--accent-gold)"></i> Trophy Hall & Badges</h3>
+          <p style="font-size:13px; color:var(--text-secondary)">
+            Unlocked <strong id="unlockedBadgesCount">0</strong> of <strong id="totalBadgesCount">20</strong> Badges
+          </p>
+        </div>
+
+        <div class="badges-filter-tabs">
+          <button class="badge-tab-btn active" data-filter="all" onclick="window.app.filterBadges('all')">All</button>
+          <button class="badge-tab-btn" data-filter="unlocked" onclick="window.app.filterBadges('unlocked')">Unlocked</button>
+          <button class="badge-tab-btn" data-filter="locked" onclick="window.app.filterBadges('locked')">Locked</button>
+        </div>
+      </div>
+
+      <div class="badges-grid" id="badgesGrid">
+        <!-- Rendered dynamically -->
+      </div>
+
+    </main>
+
+    <!-- ====================================================================
+         VIEW 5: SETTINGS & PRESTIGE
+         ==================================================================== -->
+    <main class="app-view" id="view-settings">
+      
+      <!-- Prestige Sanctuary Card -->
+      <div class="glass-card prestige-sanctuary-card">
+        <div class="prestige-icon-halo">
+          <i class="fa-solid fa-crown"></i>
+        </div>
+        <h3>Prestige Sanctuary</h3>
+        <p>
+          Reach <strong>Level 50</strong> to transcend mortal discipline. Rebirth into Prestige tier to earn permanent XP multipliers and legendary glowing honors.
+        </p>
+
+        <div class="prestige-perks-row">
+          <div class="prestige-perk">
+            <i class="fa-solid fa-bolt"></i> +25% XP Boost Per Prestige
+          </div>
+          <div class="prestige-perk">
+            <i class="fa-solid fa-star"></i> Cosmic Star Avatar
+          </div>
+          <div class="prestige-perk">
+            <i class="fa-solid fa-shield"></i> Retain All Trophies
+          </div>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          Current Prestige Rank: <strong id="settingsPrestigeRank" style="color:var(--accent-gold)">Tier 0</strong>
+          (Multiplier: <strong id="settingsPrestigeMultiplier" style="color:var(--accent-green)">+0%</strong>)
+        </div>
+
+        <button class="glass-btn glass-btn-primary" id="prestigeAscendBtn" onclick="window.app.handlePrestigeAscend()">
+          <i class="fa-solid fa-sparkles"></i> Ascend to Next Prestige
+        </button>
+      </div>
+
+      <div class="settings-grid">
+        <!-- Audio & Effects -->
+        <div class="glass-card settings-section-card">
+          <h3><i class="fa-solid fa-volume-high" style="color:var(--primary-light)"></i> Audio & Visuals</h3>
+          
+          <div class="setting-row">
+            <div class="setting-info">
+              <h4>Sound Effects</h4>
+              <p>Synthesized Web Audio API chimes & fanfare</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="soundSettingToggle" checked onchange="window.app.toggleSoundSetting(this.checked)">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <h4>Dark / Light Theme</h4>
+              <p>Switch between dark space and crisp light mode</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="themeSettingToggle" onchange="window.app.toggleThemeSetting(this.checked)">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Reminders & Notifications -->
+        <div class="glass-card settings-section-card">
+          <h3><i class="fa-solid fa-bell" style="color:var(--secondary)"></i> Daily Reminders</h3>
+          
+          <div class="setting-row">
+            <div class="setting-info">
+              <h4>Browser Notifications</h4>
+              <p>Get notified when habits are pending</p>
+            </div>
+            <button class="glass-btn" id="requestNotifyBtn" onclick="window.app.requestNotificationPermission()">
+              Enable
+            </button>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <h4>Test Notification</h4>
+              <p>Send a sample browser reminder notification</p>
+            </div>
+            <button class="glass-btn" onclick="window.app.sendTestNotification()">
+              Test Alert
+            </button>
+          </div>
+        </div>
+
+        <!-- Data Backup & Restore -->
+        <div class="glass-card settings-section-card">
+          <h3><i class="fa-solid fa-database" style="color:var(--accent-green)"></i> Data Management</h3>
+          
+          <div class="setting-row">
+            <div class="setting-info">
+              <h4>Export Progress</h4>
+              <p>Download your habits, XP, and stats as JSON</p>
+            </div>
+            <button class="glass-btn" onclick="window.app.exportDataJSON()">
+              <i class="fa-solid fa-download"></i> Export
+            </button>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <h4>Import Backup</h4>
+              <p>Restore your data from a JSON file</p>
+            </div>
+            <label class="glass-btn" style="cursor:pointer">
+              <i class="fa-solid fa-upload"></i> Import
+              <input type="file" id="importJsonFileInput" accept=".json" style="display:none" onchange="window.app.importDataJSON(event)">
+            </label>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <h4>Load Sample Habits</h4>
+              <p>Add starter habits without wiping progress</p>
+            </div>
+            <button class="glass-btn" onclick="window.app.loadSampleHabits()">
+              <i class="fa-solid fa-plus-circle"></i> Load Sample
+            </button>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <h4 style="color:var(--danger)">Reset All Data</h4>
+              <p>Clear all habits, XP, and streaks</p>
+            </div>
+            <button class="glass-btn" style="color:var(--danger); border-color:rgba(255,71,87,0.3)" onclick="window.app.confirmResetAllData()">
+              <i class="fa-solid fa-trash"></i> Reset All
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+  </div> <!-- /app-container -->
+
+  <!-- ======================================================================
+       MODAL 1: HABIT CREATE / EDIT MODAL
+       ====================================================================== -->
+  <div class="modal-backdrop" id="habitModalBackdrop">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3 id="habitModalTitle"><i class="fa-solid fa-sparkles" style="color:var(--primary-light)"></i> Create New Habit</h3>
+        <button class="modal-close-btn" onclick="window.app.closeHabitModal()">&times;</button>
+      </div>
+
+      <form id="habitForm" onsubmit="window.app.saveHabitForm(event)">
+        <input type="hidden" id="habitFormId">
+
+        <!-- Habit Name -->
+        <div class="form-group">
+          <label class="form-label" for="habitFormName">Habit Name</label>
+          <input type="text" id="habitFormName" class="glass-input" placeholder="e.g. Read 20 pages" required maxlength="50">
+        </div>
+
+        <!-- Emoji Picker -->
+        <div class="form-group">
+          <label class="form-label">Choose Icon</label>
+          <div class="emoji-picker-container" id="emojiPickerGrid">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Category Dropdown -->
+        <div class="form-group">
+          <label class="form-label" for="habitFormCategory">Category</label>
+          <select id="habitFormCategory" class="glass-select" style="width:100%">
+            <option value="Health">💧 Health</option>
+            <option value="Fitness">🏃 Fitness</option>
+            <option value="Learning">📚 Learning</option>
+            <option value="Mindfulness">🧘 Mindfulness</option>
+            <option value="Productivity">💻 Productivity</option>
+            <option value="Creative">🎨 Creative</option>
+            <option value="Social">🤝 Social</option>
+          </select>
+        </div>
+
+        <!-- Difficulty Stars & XP Preview -->
+        <div class="form-group">
+          <label class="form-label">
+            Difficulty (XP Value: <strong id="habitFormXpPreview" style="color:var(--accent-gold)">+40 XP</strong>)
+          </label>
+          <div class="stars-picker-row" id="starsPickerRow">
+            <button type="button" class="star-rate-btn active" data-star="1">★</button>
+            <button type="button" class="star-rate-btn active" data-star="2">★</button>
+            <button type="button" class="star-rate-btn active" data-star="3">★</button>
+            <button type="button" class="star-rate-btn" data-star="4">★</button>
+            <button type="button" class="star-rate-btn" data-star="5">★</button>
+          </div>
+        </div>
+
+        <!-- Frequency -->
+        <div class="form-group">
+          <label class="form-label">Frequency</label>
+          <div class="frequency-btns-row" id="frequencyBtnsRow">
+            <button type="button" class="freq-btn active" data-freq="daily">Every Day</button>
+            <button type="button" class="freq-btn" data-freq="weekdays">Weekdays</button>
+            <button type="button" class="freq-btn" data-freq="weekends">Weekends</button>
+          </div>
+        </div>
+
+        <!-- Color Swatches -->
+        <div class="form-group">
+          <label class="form-label">Accent Color</label>
+          <div class="color-swatches-row" id="colorSwatchesRow">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:24px;">
+          <button type="button" class="glass-btn" onclick="window.app.closeHabitModal()">Cancel</button>
+          <button type="submit" class="glass-btn glass-btn-primary">
+            <i class="fa-solid fa-check"></i> Save Habit
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       MODAL 2: HABIT DETAIL SLIDE-IN PANEL
+       ====================================================================== -->
+  <div class="slide-panel-backdrop" id="slidePanelBackdrop" onclick="window.app.closeDetailPanel()">
+    <div class="slide-panel" onclick="event.stopPropagation()">
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <span class="habit-category-pill" id="detailCategoryPill">Health</span>
+        <button class="modal-close-btn" onclick="window.app.closeDetailPanel()">&times;</button>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:16px;">
+        <div class="habit-icon-box" id="detailIconBox" style="font-size:32px; width:56px; height:56px;">💧</div>
+        <div>
+          <h2 id="detailTitle" style="font-family:var(--font-heading); font-size:20px; font-weight:800">Habit Name</h2>
+          <div id="detailDifficultyStars" style="color:var(--accent-gold); font-size:13px; margin-top:2px;"></div>
+        </div>
+      </div>
+
+      <!-- Quick Habit Stats -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div class="glass-card" style="padding:12px; text-align:center;">
+          <div style="font-size:11px; color:var(--text-secondary)">CURRENT STREAK</div>
+          <div style="font-size:22px; font-weight:800; color:var(--accent-orange)" id="detailCurrentStreak">0 Days</div>
+        </div>
+        <div class="glass-card" style="padding:12px; text-align:center;">
+          <div style="font-size:11px; color:var(--text-secondary)">BEST STREAK</div>
+          <div style="font-size:22px; font-weight:800; color:var(--accent-gold)" id="detailBestStreak">0 Days</div>
+        </div>
+        <div class="glass-card" style="padding:12px; text-align:center;">
+          <div style="font-size:11px; color:var(--text-secondary)">TOTAL CHECK-INS</div>
+          <div style="font-size:22px; font-weight:800; color:var(--accent-green)" id="detailTotalCompletions">0</div>
+        </div>
+        <div class="glass-card" style="padding:12px; text-align:center;">
+          <div style="font-size:11px; color:var(--text-secondary)">COMPLETION RATE</div>
+          <div style="font-size:22px; font-weight:800; color:var(--primary-light)" id="detailCompletionRate">0%</div>
+        </div>
+      </div>
+
+      <!-- Mini 30-Day Activity Calendar -->
+      <div>
+        <h4 style="font-family:var(--font-heading); font-size:14px; font-weight:700; margin-bottom:8px;">
+          Past 30 Days Activity
+        </h4>
+        <div id="detailMiniCalendarGrid" style="display:grid; grid-template-columns:repeat(10, 1fr); gap:6px;">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div style="display:flex; gap:10px; margin-top:auto; padding-top:20px; border-top:1px solid var(--border-glass);">
+        <button class="glass-btn" style="flex:1" id="detailEditBtn" onclick="window.app.editHabitFromDetail()">
+          <i class="fa-solid fa-pen"></i> Edit
+        </button>
+        <button class="glass-btn" style="color:var(--danger); border-color:rgba(255,71,87,0.3)" id="detailDeleteBtn" onclick="window.app.deleteHabitFromDetail()">
+          <i class="fa-solid fa-trash"></i> Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       MODAL 3: FULLSCREEN LEVEL UP CELEBRATION
+       ====================================================================== -->
+  <div class="modal-backdrop" id="levelUpModalBackdrop">
+    <div class="modal-window level-up-modal">
+      <div class="level-up-rays"></div>
+      
+      <div class="level-up-badge" id="levelUpModalNumber">2</div>
+      
+      <h2 style="font-family:var(--font-heading); font-size:26px; font-weight:900; color:var(--accent-gold); margin-bottom:4px;">
+        LEVEL UP!
+      </h2>
+      <p style="font-size:14px; color:var(--text-secondary); margin-bottom:16px;" id="levelUpModalTitle">
+        You are now a Habit Adept!
+      </p>
+
+      <div class="glass-card" style="padding:14px; text-align:left; margin-bottom:20px; font-size:13px;">
+        <div style="color:var(--accent-green); font-weight:700; margin-bottom:6px;">
+          <i class="fa-solid fa-gift"></i> Level Rewards Unlocked:
+        </div>
+        <ul style="padding-left:18px; color:var(--text-secondary); line-height:1.6;">
+          <li>Maximum energy bonus unlocked</li>
+          <li>Boss monster damage bonus increased</li>
+          <li>Companion dragon happiness restored</li>
+        </ul>
+      </div>
+
+      <button class="glass-btn glass-btn-primary" style="width:100%; justify-content:center; padding:12px;" onclick="window.app.closeLevelUpModal()">
+        Claim Glory & Continue
+      </button>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       MODAL 4: BOSS DEFEATED CELEBRATION
+       ====================================================================== -->
+  <div class="modal-backdrop" id="bossDefeatedModalBackdrop">
+    <div class="modal-window level-up-modal" style="border-color:var(--secondary)">
+      <div class="level-up-rays" style="background:conic-gradient(from 0deg, transparent, rgba(255,101,132,0.2), transparent);"></div>
+      
+      <div style="font-size:72px; margin:16px 0;" id="bossDefeatChestAnim">🏆</div>
+      
+      <h2 style="font-family:var(--font-heading); font-size:26px; font-weight:900; color:var(--secondary); margin-bottom:6px;">
+        BOSS SLAIN!
+      </h2>
+      <p style="font-size:14px; color:var(--text-secondary); margin-bottom:16px;" id="bossDefeatSubtext">
+        You crushed the weekly boss monster through relentless consistency!
+      </p>
+
+      <div class="glass-card" style="padding:14px; margin-bottom:20px; text-align:center;">
+        <div style="font-size:24px; font-weight:900; color:var(--accent-gold); margin-bottom:4px;">
+          +500 BONUS XP
+        </div>
+        <div style="font-size:12px; color:var(--text-secondary)">
+          Boss Slayer Trophy Added to your Trophy Room
+        </div>
+      </div>
+
+      <button class="glass-btn glass-btn-primary" style="width:100%; justify-content:center; padding:12px;" onclick="window.app.closeBossDefeatedModal()">
+        Collect Spoils & Return
+      </button>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       UNDO SNACKBAR
+       ====================================================================== -->
+  <div class="snackbar-container" id="undoSnackbar">
+    <div class="snackbar-text">
+      <i class="fa-solid fa-circle-check" style="color:var(--accent-green)"></i>
+      <span id="snackbarMessage">Habit Completed (+40 XP)</span>
+    </div>
+    <button class="snackbar-undo-btn" id="snackbarUndoBtn" onclick="window.app.executeUndo()">
+      Undo
+    </button>
+  </div>
+
+  <!-- App Script -->
+  <script src="app.js"></script>
+</body>
+</html>
